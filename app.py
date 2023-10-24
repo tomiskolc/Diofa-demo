@@ -129,9 +129,6 @@ else:
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
 
-            # we dont want exact matches by accident
-            QUERY = QUERY.replace('"', "").replace("'", "") 
-
             relevant_chunks = retrieve_relevant_chunks(QUERY, st.session_state['db'], st.session_state['embeddings'])
 
             messages =[
