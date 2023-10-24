@@ -19,8 +19,12 @@ MODEL_INPUT_TOKEN_SUMM_LIMIT = 3200
 MODEL_MAX_TOKEN_LIMIT = 4097
 MODEL_COST = 0.0015
 
+@st.cache
+def load_embedding():
+	  return HuggingFaceEmbeddings(model_name='intfloat/multilingual-e5-large')
+
 if 'embeddings' not in st.session_state:
-    st.session_state['embeddings'] = HuggingFaceEmbeddings(model_name='intfloat/multilingual-e5-large')
+    st.session_state['embeddings'] = load_embedding()
 
 # functions, prompts
 def generate_response(messages, MODEL, TEMPERATURE, MAX_TOKENS):
@@ -90,8 +94,12 @@ with prompt_expander:
         MAX_TOKENS = st.slider('Number of max output tokens', min_value = 1, max_value = MODEL_MAX_TOKEN_LIMIT-MODEL_INPUT_TOKEN_SUMM_LIMIT, value = 512)
 
 #### LOAD INDEX ####
+@st.cache
+def load_index():
+	  return FAISS.load_local("faiss_index_e5_large", st.session_state['embeddings'])
+
 if 'db' not in st.session_state:
-    st.session_state['db'] = FAISS.load_local("faiss_index_e5_large", st.session_state['embeddings'])
+    st.session_state['db'] = load_index()
 
 #### END OF LOAD INDEX ####
 
