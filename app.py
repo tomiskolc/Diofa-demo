@@ -19,7 +19,7 @@ MODEL_INPUT_TOKEN_SUMM_LIMIT = 3200
 MODEL_MAX_TOKEN_LIMIT = 4097
 MODEL_COST = 0.0015
 
-@st.cache
+@st.cache_resource
 def load_embedding():
 	  return HuggingFaceEmbeddings(model_name='intfloat/multilingual-e5-large')
 
@@ -94,7 +94,7 @@ with prompt_expander:
         MAX_TOKENS = st.slider('Number of max output tokens', min_value = 1, max_value = MODEL_MAX_TOKEN_LIMIT-MODEL_INPUT_TOKEN_SUMM_LIMIT, value = 512)
 
 #### LOAD INDEX ####
-@st.cache
+@st.cache_resource
 def load_index():
 	  return FAISS.load_local("faiss_index_e5_large", st.session_state['embeddings'])
 
