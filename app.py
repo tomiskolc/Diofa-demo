@@ -1,6 +1,7 @@
 # packages
 import streamlit as st
 import numpy as np
+import requests
 
 #from credentials import openai_api
 import os
@@ -8,7 +9,7 @@ import openai
 from langchain.vectorstores import FAISS
 from langchain.embeddings import HuggingFaceEmbeddings
 
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/4/4d/OpenAI_Logo.svg", use_column_width=True)
+#st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/4/4d/OpenAI_Logo.svg", use_column_width=True)
 with st.sidebar:
     openai_api = st.text_input('OpenAI API Key', type = 'password', key = 'openai_key')
     openai.api_key = openai_api
@@ -19,12 +20,24 @@ MODEL_INPUT_TOKEN_SUMM_LIMIT = 3200
 MODEL_MAX_TOKEN_LIMIT = 4097
 MODEL_COST = 0.0015
 
-@st.cache_resource
+model_id = "intfloat/multilingual-e5-large"
+hf_token = "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"
+
+api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_id}"
+headers = {"Authorization": f"Bearer {hf_token}"}
+
+def inference_embedding(texts):
+    response = requests.post(api_url, headers=headers, json={"inputs": texts, "options":{"wait_for_model":True}})
+    return response.json()
+
 def load_embedding():
 	  return HuggingFaceEmbeddings(model_name='intfloat/multilingual-e5-large')
 
 if 'embeddings' not in st.session_state:
     st.session_state['embeddings'] = load_embedding()
+
+if 'db' in st.session_state:
+    st.session_state['embeddings'] = 'None'
 
 # functions, prompts
 def generate_response(messages, MODEL, TEMPERATURE, MAX_TOKENS):
@@ -35,9 +48,9 @@ def generate_response(messages, MODEL, TEMPERATURE, MAX_TOKENS):
         max_tokens=MAX_TOKENS)
     return completion.choices[0]['message']['content']
 
-def retrieve_relevant_chunks(user_input, db, embeddings):
+def retrieve_relevant_chunks(user_input, db):
 
-    query_embedded = embeddings.embed_query(user_input)
+    query_embedded = inference_embedding(user_input)
 
     sim_docs = db.similarity_search_by_vector(query_embedded, k = MODEL_RELEVANT_DOC_NUMBER)
     results = [doc.metadata['source'].split("\\")[-1] + "-page-" + str(doc.metadata['page'] )+ ": " + doc.page_content.replace("\n", "").replace("\r", "") for doc in sim_docs]
@@ -94,7 +107,8 @@ with prompt_expander:
         MAX_TOKENS = st.slider('Number of max output tokens', min_value = 1, max_value = MODEL_MAX_TOKEN_LIMIT-MODEL_INPUT_TOKEN_SUMM_LIMIT, value = 512)
 
 #### LOAD INDEX ####
-@st.cache_resource
+
+@st.cache_data
 def load_index():
 	  return FAISS.load_local("faiss_index_e5_large", st.session_state['embeddings'])
 
@@ -129,7 +143,7 @@ else:
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
 
-            relevant_chunks = retrieve_relevant_chunks(QUERY, st.session_state['db'], st.session_state['embeddings'])
+            relevant_chunks = retrieve_relevant_chunks(QUERY, st.session_state['db'])
 
             messages =[
                         {"role": "system", "content" : "You are a helpful assistant helping people answer their questions related to documents."},
