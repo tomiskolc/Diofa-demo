@@ -29,15 +29,12 @@ headers = {"Authorization": f"Bearer {hf_token}"}
 def inference_embedding(texts):
     response = requests.post(api_url, headers=headers, json={"inputs": texts, "options":{"wait_for_model":True}})
     return response.json()
-@st.cache_data(ttl=120)
+@st.cache_resource(ttl=120)
 def load_embedding():
 	  return HuggingFaceEmbeddings(model_name='intfloat/multilingual-e5-large')
 
 if 'embeddings' not in st.session_state:
     st.session_state['embeddings'] = load_embedding()
-
-if 'db' in st.session_state:
-    st.session_state['embeddings'] = 'None'
 
 # functions, prompts
 def generate_response(messages, MODEL, TEMPERATURE, MAX_TOKENS):
