@@ -29,7 +29,7 @@ headers = {"Authorization": f"Bearer {hf_token}"}
 def inference_embedding(texts):
     response = requests.post(api_url, headers=headers, json={"inputs": texts, "options":{"wait_for_model":True}})
     return response.json()
-@st.cache_resource(ttl=300)
+@st.cache_resource
 def load_embedding():
 	  return HuggingFaceEmbeddings(model_name='intfloat/multilingual-e5-large')
 
