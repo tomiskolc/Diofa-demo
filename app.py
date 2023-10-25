@@ -105,7 +105,7 @@ with prompt_expander:
 
 #### LOAD INDEX ####
 
-@st.cache_data
+@st.cache_resource
 def load_index():
 	  return FAISS.load_local("faiss_index_e5_large", st.session_state['embeddings'])
 
